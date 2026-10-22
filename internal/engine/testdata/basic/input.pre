@@ -1,0 +1,37 @@
+---
+targets:
+  - output: "user_repository.go"
+    vars:
+      entity: "User"
+      package_name: "repositories"
+      fields:
+        - name: "ID"
+          type: "int"
+        - name: "Email"
+          type: "string"
+
+  - output: "product_repository.go"
+    vars:
+      entity: "Product"
+      package_name: "repositories"
+      fields:
+        - name: "ID"
+          type: "int"
+        - name: "Price"
+          type: "float64"
+---
+package {{ .package_name }}
+
+// Code generated for target file: {{ output }}
+
+type {{ .entity }}Repository struct {
+    client DatabaseClient
+}
+
+{{ range index, field := .fields }}
+// Field {{ index + 1 }}
+func (r *{{ .entity }}Repository) Get{{ field.name }}() {{ field.type }} {
+    var val {{ field.type }}
+    return val
+}
+{{ end }}

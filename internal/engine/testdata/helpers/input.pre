@@ -1,0 +1,12 @@
+---
+targets:
+  - output: "helpers.txt"
+    vars:
+      entity: "user_repository"
+---
+type: {{ pascalCase(.entity) }}
+field: {{ camelCase(.entity) }}ID
+label: {{ snakeCase(.entity) }}
+title: {{ titleCase(.entity) }}
+kebab: {{ kebabCase(.entity) }}
+upper: {{ upper(.entity) }}

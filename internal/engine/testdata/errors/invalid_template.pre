@@ -1,0 +1,5 @@
+---
+targets:
+  - output: "x.txt"
+---
+{{ unclosed 

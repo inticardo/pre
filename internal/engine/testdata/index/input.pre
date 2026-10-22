@@ -1,0 +1,13 @@
+---
+targets:
+  - output: "first.txt"
+    vars:
+      name: "first"
+  - output: "second.txt"
+    vars:
+      name: "second"
+---
+file: {{ output }}
+target: {{ .target_index }}
+plain: {{ target_index }}
+name: {{ .name }}

@@ -1,0 +1,6 @@
+---
+targets:
+  - vars:
+      a: 1
+---
+body

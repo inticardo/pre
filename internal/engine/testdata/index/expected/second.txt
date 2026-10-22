@@ -1,0 +1,4 @@
+file: second.txt
+target: 1
+plain: 1
+name: second

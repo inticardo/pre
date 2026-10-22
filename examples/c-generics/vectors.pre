@@ -1,0 +1,62 @@
+---
+targets:
+  - output: "generated/vec_int.h"
+    vars:
+      name: "VecInt"
+      element_type: "int"
+
+  - output: "generated/vec_double.h"
+    vars:
+      name: "VecDouble"
+      element_type: "double"
+---
+{{ include "./partials/header.h.jet" }}
+#ifndef {{ upper(snakeCase(.name)) }}_H
+#define {{ upper(snakeCase(.name)) }}_H
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
+
+typedef struct {
+    {{ .element_type }} *items;
+    size_t len;
+    size_t cap;
+} {{ .name }};
+
+static inline bool {{ snakeCase(.name) }}_reserve({{ .name }} *v, size_t cap) {
+    if (cap <= v->cap) {
+        return true;
+    }
+    {{ .element_type }} *items = realloc(v->items, cap * sizeof({{ .element_type }}));
+    if (items == NULL) {
+        return false;
+    }
+    v->items = items;
+    v->cap = cap;
+    return true;
+}
+
+static inline bool {{ snakeCase(.name) }}_push({{ .name }} *v, {{ .element_type }} value) {
+    if (v->len == v->cap) {
+        size_t next = v->cap == 0 ? 8 : v->cap * 2;
+        if (!{{ snakeCase(.name) }}_reserve(v, next)) {
+            return false;
+        }
+    }
+    v->items[v->len++] = value;
+    return true;
+}
+
+static inline {{ .element_type }} {{ snakeCase(.name) }}_get(const {{ .name }} *v, size_t index) {
+    return v->items[index];
+}
+
+static inline void {{ snakeCase(.name) }}_free({{ .name }} *v) {
+    free(v->items);
+    v->items = NULL;
+    v->len = 0;
+    v->cap = 0;
+}
+
+#endif /* {{ upper(snakeCase(.name)) }}_H */

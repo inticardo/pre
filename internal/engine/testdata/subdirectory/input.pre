@@ -1,0 +1,9 @@
+---
+targets:
+  - output: "nested/deep/out.txt"
+    vars:
+      package_name: "repositories"
+      version: "1.0.0"
+---
+package {{ .package_name }} v{{ .version }}
+output: {{ output }}

@@ -1,0 +1,6 @@
+type: UserRepository
+field: userRepositoryID
+label: user_repository
+title: User Repository
+kebab: user-repository
+upper: USER_REPOSITORY

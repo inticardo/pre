@@ -1,0 +1,8 @@
+# Build output
+/bin/
+
+# Vendored dependencies (generated with `go mod vendor`, like node_modules)
+/vendor/
+
+# Generated example output (run `make examples` to recreate it)
+/examples/*/generated/

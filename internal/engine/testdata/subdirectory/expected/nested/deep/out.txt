@@ -1,0 +1,2 @@
+package repositories v1.0.0
+output: nested/deep/out.txt

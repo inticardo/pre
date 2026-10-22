@@ -1,0 +1,60 @@
+---
+targets:
+  - output: "generated/int_list.gd"
+    vars:
+      class_name: "IntList"
+      element_type: "int"
+
+  - output: "generated/float_list.gd"
+    vars:
+      class_name: "FloatList"
+      element_type: "float"
+
+  - output: "generated/vector2_list.gd"
+    vars:
+      class_name: "Vector2List"
+      element_type: "Vector2"
+---
+{{ include "./partials/header.gd.jet" }}
+class_name {{ .class_name }}
+extends RefCounted
+
+## A strongly typed list of {{ .element_type }} values.
+##
+## GDScript has no generics, so this class is generated once per element type
+## instead of being written by hand.
+
+
+var _items: Array[{{ .element_type }}] = []
+
+
+## Appends [param value] to the end of the list.
+func add(value: {{ .element_type }}) -> void:
+	_items.append(value)
+
+
+## Returns the element at [param index].
+func get_at(index: int) -> {{ .element_type }}:
+	return _items[index]
+
+
+## Returns the first element, or [param fallback] when the list is empty.
+func first_or(fallback: {{ .element_type }}) -> {{ .element_type }}:
+	return _items[0] if not _items.is_empty() else fallback
+
+
+## Returns how many elements the list holds.
+func size() -> int:
+	return _items.size()
+
+
+## Reports whether the list is empty.
+func is_empty() -> bool:
+	return _items.is_empty()
+
+
+## Returns a copy of the items as a typed array.
+func to_array() -> Array[{{ .element_type }}]:
+	var copy: Array[{{ .element_type }}] = []
+	copy.assign(_items)
+	return copy

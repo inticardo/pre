@@ -1,0 +1,33 @@
+---
+targets:
+  - output: "generated/docker-compose.yml"
+    vars:
+      project: "Acme Shop"
+      services:
+        - name: "Web"
+          image: "ghcr.io/acme/shop:1.0"
+          restart: "unless-stopped"
+          ports: ["8080:8080"]
+          depends_on: ["Database"]
+        - name: "Database"
+          image: "postgres:16"
+          restart: "always"
+          ports: []
+          depends_on: []
+      volumes:
+        - "ShopData"
+---
+{{ extends "./partials/compose.yml.jet" }}
+
+{{ block services() }}{{ range i, s := .services }}  {{ snakeCase(s.name) }}:
+    image: {{ s.image }}
+    restart: {{ s.restart }}
+{{ if len(s.ports) > 0 }}    ports:
+{{ range _, p := s.ports }}      - "{{ p }}"
+{{ end }}{{ end }}{{ if len(s.depends_on) > 0 }}    depends_on:
+{{ range _, d := s.depends_on }}      - {{ snakeCase(d) }}
+{{ end }}{{ end }}{{ end }}{{ end }}
+
+{{ block volumes() }}{{ range _, v := .volumes }}  {{ snakeCase(v) }}:
+    driver: local
+{{ end }}{{ end }}

@@ -1,0 +1,8 @@
+---
+targets:
+  - output: "with_include.txt"
+    vars:
+      package_name: "repositories"
+---
+{{ include "./partials/header.jet" }}
+Generated for {{ output }}.
