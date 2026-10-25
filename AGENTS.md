@@ -51,9 +51,11 @@ pre/
 │   ├── engine/
 │   │   └── engine.go        # Core preprocessor engine: parses YAML, runs Jet, writes files
 │   └── helpers/
-│       ├── helpers.go       # Main registry function for custom Jet helpers
-│       ├── string_helpers.go# Individual string helper function implementations
-│       └── random_helpers.go# Random number and text helper function implementations
+│       ├── helpers.go        # Main registry function for custom Jet helpers
+│       ├── string_helpers.go # String helper function implementations
+│       ├── list_helpers.go   # Collection helper function implementations
+│       ├── random_helpers.go # Random number and text helper function implementations
+│       └── time_helpers.go   # Time helper function implementations
 ├── examples/               # Self-contained example projects (see section 8)
 │   ├── README.md           # Index of the examples and how to run them
 │   ├── examples_test.go    # Renders every example in an isolated temporary directory
@@ -89,17 +91,32 @@ Output names must be unique for the same reason.
 ```go
 package helpers
 
+import "github.com/CloudyKit/jet/v6"
+
+// RegisterHelpers binds all custom helper functions to the provided Jet Set.
+//
+// The registrations are grouped by domain, with one registerXHelpers function
+// per helper file: string, list, random and time helpers.
+func RegisterHelpers(set *jet.Set) {
+	registerStringHelpers(set)
+	registerListHelpers(set)
+	registerRandomHelpers(set)
+	registerTimeHelpers(set)
+}
+```
+
+```go
+package helpers
+
 import (
 	"strings"
 
 	"github.com/CloudyKit/jet/v6"
 )
 
-// RegisterHelpers binds all custom helper functions to the provided Jet Set.
-//
-// Note: `AddGlobalFunc` only accepts `jet.Func` values (`func(Arguments) reflect.Value`),
-// so plain Go functions must be registered with `AddGlobal`.
-func RegisterHelpers(set *jet.Set) {
+// registerStringHelpers binds all string helpers to the provided Jet Set,
+// implementing each helper inside the file that owns the domain.
+func registerStringHelpers(set *jet.Set) {
 	set.AddGlobal("lower", func(in string) string {
 		return strings.ToLower(in)
 	})
@@ -109,9 +126,17 @@ func RegisterHelpers(set *jet.Set) {
 }
 ```
 
+Note: `AddGlobalFunc` only accepts `jet.Func` values (`func(Arguments) reflect.Value`), so plain Go functions must be registered with `AddGlobal`.
+
 `snakeCase`, `pascalCase`, `camelCase` and the other word helpers are
 implemented in `string_helpers.go`; the snippet above only illustrates the
-registration mechanism.
+registration mechanism. Helper implementations are grouped by domain:
+`string_helpers.go` (text), `list_helpers.go` (collections), `random_helpers.go`
+(random values) and `time_helpers.go` (current time), and each group defines
+its own `registerXHelpers(set)` binding function when it needs `jet.Func`
+members. Helpers that accept a flexible argument list or coercible arguments
+(such as `padStart` and the random helpers) must be registered with
+`AddGlobalFunc`; plain fixed signature functions use `AddGlobal`.
 
 ---
 
@@ -217,7 +242,7 @@ so they must be kept working:
   needed, a `partials/` directory and a `README.md`.
 - Output is written to `examples/<name>/generated/`, which is ignored by git and
   recreated with `make examples`.
-- Examples must be deterministic: never use the random helpers in them.
+- Examples must be deterministic: never use the random or time helpers in them.
 - `examples/examples_test.go` renders every example in a temporary directory, so
   `go test ./...` catches broken templates without requiring external
   toolchains.

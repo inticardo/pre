@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	crand "crypto/rand"
+	"fmt"
 	"math/rand/v2"
 	"reflect"
 	"strings"
@@ -51,6 +53,39 @@ func registerRandomHelpers(set *jet.Set) {
 		args.RequireNumOfArguments("randomAlpha", 1, 1)
 
 		return reflect.ValueOf(randomText(toInt(args, 0), alphaCharset))
+	})
+
+	set.AddGlobalFunc("randomChoice", func(args jet.Arguments) reflect.Value {
+		args.RequireNumOfArguments("randomChoice", 1, 1)
+
+		list, ok := sequence(args.Get(0))
+		if !ok {
+			args.Panicf("randomChoice(): the argument must be a slice or an array")
+		}
+		if list.Len() == 0 {
+			args.Panicf("randomChoice(): the list is empty")
+		}
+
+		return list.Index(rand.IntN(list.Len()))
+	})
+
+	set.AddGlobalFunc("uuid", func(args jet.Arguments) reflect.Value {
+		args.RequireNumOfArguments("uuid", 0, 0)
+
+		// The bytes come from the cryptographically secure source, as
+		// recommended by RFC 4122 for UUID version 4.
+		var bytes [16]byte
+		if _, err := crand.Read(bytes[:]); err != nil {
+			args.Panicf("uuid(): cannot read the random source: %v", err)
+		}
+
+		bytes[6] = (bytes[6] & 0x0f) | 0x40 // version 4
+		bytes[8] = (bytes[8] & 0x3f) | 0x80 // RFC 4122 variant
+
+		return reflect.ValueOf(fmt.Sprintf(
+			"%x-%x-%x-%x-%x",
+			bytes[0:4], bytes[4:6], bytes[6:8], bytes[8:10], bytes[10:16],
+		))
 	})
 }
 

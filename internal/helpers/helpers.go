@@ -9,20 +9,11 @@ import "github.com/CloudyKit/jet/v6"
 
 // RegisterHelpers binds all custom helper functions to the provided Jet set.
 //
-// The registered functions are plain Go functions, so they can be called from
-// a template using the usual syntax: {{ snakeCase("UserRepository") }}.
+// The registrations are grouped by domain, with one registerXHelpers function
+// per helper file: string, list, random and time helpers.
 func RegisterHelpers(set *jet.Set) {
-	set.AddGlobal("lower", lower)
-	set.AddGlobal("upper", upper)
-	set.AddGlobal("trimSpace", trimSpace)
-	set.AddGlobal("replace", replace)
-	set.AddGlobal("hasPrefix", hasPrefix)
-	set.AddGlobal("hasSuffix", hasSuffix)
-	set.AddGlobal("snakeCase", snakeCase)
-	set.AddGlobal("camelCase", camelCase)
-	set.AddGlobal("pascalCase", pascalCase)
-	set.AddGlobal("kebabCase", kebabCase)
-	set.AddGlobal("titleCase", titleCase)
-
+	registerStringHelpers(set)
+	registerListHelpers(set)
 	registerRandomHelpers(set)
+	registerTimeHelpers(set)
 }

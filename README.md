@@ -244,6 +244,30 @@ functions of Jet:
 | `pascalCase` | Converts to `PascalCase` | `pascalCase("user_repository")` → `UserRepository` |
 | `kebabCase` | Converts to `kebab-case` | `kebabCase("UserRepository")` → `user-repository` |
 | `titleCase` | Converts to `Title Case` | `titleCase("user_repository")` → `User Repository` |
+| `trimPrefix` | Removes the leading prefix when present | `trimPrefix("tbl_user", "tbl_")` → `user` |
+| `trimSuffix` | Removes the trailing suffix when present | `trimSuffix("user_old", "_old")` → `user` |
+| `padStart` | Pads on the left up to the given width in runes; strings and numbers are accepted and the padding defaults to a space | `padStart("42", 6, "0")` → `000042` |
+| `padEnd` | Pads on the right up to the given width in runes; strings and numbers are accepted and the padding defaults to a space | `padEnd("ab", 5, ".")` → `ab...` |
+| `indent` | Prefixes every line with the given number of spaces | a block rendered with `include`, `block` or `exec` |
+| `default` | Falls back when the value is empty, nil or the type zero value | `default(.package_name, "main")` |
+
+### Collection helpers
+
+| Helper | Description | Example |
+| --- | --- | --- |
+| `join` | Joins the list elements with the separator | `join(.names, ", ")` → `ID, Email` |
+| `first` | Returns the first element of the list | `first(.fields).name` → `ID` |
+| `last` | Returns the last element of the list | `last(.fields).name` → `Email` |
+| `contains` | Reports whether the list contains the value; with a string it checks the substring | `contains(.names, "ID")` → `true` |
+| `sortBy` | Returns a new list sorted by a string or a number field, keeping the elements with equal keys in order | `range index, field := sortBy(.fields, "name")` |
+
+Every collection helper reads its arguments with reflection, so it works with
+the lists defined in the YAML frontmatter, whose elements reach the template as
+maps: `first`, `last` and `contains` accept any kind of list, and `sortBy`
+extracts the sort key from a map key or from a struct field, reporting a clear
+error for a missing field or an inconsistent key type. Their results are list
+elements again, so their members are read with member access
+(`first(.fields).name`) or bound in a `range` block.
 
 ### Random helpers
 
@@ -253,6 +277,8 @@ functions of Jet:
 | `randomFloat` | Random float within the given range, the upper bound excluded | `randomFloat(0, 1)` → `0.42` |
 | `randomString` | Random alphanumeric string of the given length | `randomString(8)` → `a3Fz09Qk` |
 | `randomAlpha` | Random string of letters of the given length | `randomAlpha(8)` → `qTzMbWnR` |
+| `randomChoice` | Random element of the given list | `randomChoice(.samples)` |
+| `uuid` | Random version 4 UUID | `uuid()` → `b8540f52-06e1-4f0c-9b13-6a4d61a6c0c3` |
 
 The numeric arguments accept both integers and floats, so `randomFloat(0, 1)`
 and `randomFloat(0.0, 1.0)` are equivalent.
@@ -260,6 +286,26 @@ and `randomFloat(0.0, 1.0)` are equivalent.
 > These helpers draw from a random source, so the generated content is **not
 > reproducible**: running `pre` twice over the same file produces different
 > values.
+
+### Time helpers
+
+| Helper | Description | Example |
+| --- | --- | --- |
+| `date` | Formats the current time with the given Go reference layout | `date("2006-01-02")` → `2026-10-25` |
+| `now` | Alias of `date` | `now("2006")` → `2026` |
+
+Both helpers take Go's reference layout (`2006-01-02 15:04:05`), not date
+patterns like `YYYY-MM-DD`:
+
+```
+date("2006")         // year:      2026
+date("15:04:05")     // clock:     14:52:31
+date("2006-01-02")   // full date: 2026-10-25
+```
+
+> These helpers read the system clock, so the generated content is **not
+> reproducible**, just like the random helpers: running `pre` twice over the
+> same file renders different values.
 
 ## Dependencies
 

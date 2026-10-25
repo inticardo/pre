@@ -1,9 +1,38 @@
 package helpers
 
 import (
+	"reflect"
 	"strings"
 	"unicode"
+
+	"github.com/CloudyKit/jet/v6"
 )
+
+// registerStringHelpers binds all string helpers to the provided Jet set.
+//
+// The registered functions are plain Go functions, so they can be called from
+// a template using the usual syntax: {{ snakeCase("UserRepository") }}. Only
+// padStart and padEnd are jet.Func values, because they take an optional
+// padding argument and accept both strings and numbers.
+func registerStringHelpers(set *jet.Set) {
+	set.AddGlobal("lower", lower)
+	set.AddGlobal("upper", upper)
+	set.AddGlobal("trimSpace", trimSpace)
+	set.AddGlobal("replace", replace)
+	set.AddGlobal("hasPrefix", hasPrefix)
+	set.AddGlobal("hasSuffix", hasSuffix)
+	set.AddGlobal("trimPrefix", trimPrefix)
+	set.AddGlobal("trimSuffix", trimSuffix)
+	set.AddGlobal("indent", indent)
+	set.AddGlobal("default", defaultValue)
+	set.AddGlobalFunc("padStart", padStart)
+	set.AddGlobalFunc("padEnd", padEnd)
+	set.AddGlobal("snakeCase", snakeCase)
+	set.AddGlobal("camelCase", camelCase)
+	set.AddGlobal("pascalCase", pascalCase)
+	set.AddGlobal("kebabCase", kebabCase)
+	set.AddGlobal("titleCase", titleCase)
+}
 
 // lower returns the string with all Unicode letters mapped to their lower case.
 func lower(in string) string {
@@ -59,6 +88,121 @@ func pascalCase(in string) string {
 // titleCase converts the string to Title Case: "user_repository" -> "User Repository".
 func titleCase(in string) string {
 	return joinCapitalized(in, " ", true)
+}
+
+// trimPrefix returns the string without the given leading prefix, when
+// present: "tbl_user" -> "user". When the prefix is not there the string is
+// returned unchanged.
+func trimPrefix(in, prefix string) string {
+	return strings.TrimPrefix(in, prefix)
+}
+
+// trimSuffix returns the string without the given trailing suffix, when
+// present: "user_old" -> "user". When the suffix is not there the string is
+// returned unchanged.
+func trimSuffix(in, suffix string) string {
+	return strings.TrimSuffix(in, suffix)
+}
+
+// indent prefixes every line of the string with the given number of spaces,
+// including the first line and the last one even when it has no trailing
+// newline. It is meant to indent whole blocks rendered through include, block
+// or exec calls.
+func indent(width int, in string) string {
+	if width <= 0 || in == "" {
+		return in
+	}
+
+	prefix := strings.Repeat(" ", width)
+
+	return prefix + strings.ReplaceAll(in, "\n", "\n"+prefix)
+}
+
+// defaultValue returns the fallback value when the given value is empty, nil
+// or its type zero value: strings that are "", numbers that are 0, nil and
+// empty lists and maps, and nil pointers. Otherwise it returns the value
+// itself. It is registered as "default".
+func defaultValue(value, fallback any) any {
+	target := reflect.ValueOf(value)
+	if !target.IsValid() || target.IsZero() || isEmpty(target) {
+		return fallback
+	}
+
+	return value
+}
+
+// isEmpty reports whether the given value is a nil or empty collection: a nil
+// count alone is not enough, because a zero length list or map is already
+// empty even when it is allocated.
+func isEmpty(target reflect.Value) bool {
+	switch target.Kind() {
+	case reflect.Slice, reflect.Map:
+		return target.Len() == 0
+	}
+
+	return false
+}
+
+// padStart pads the string on the left with the padding string until it
+// reaches the given width counted in runes: padStart("42", 6, "0") renders
+// "000042". The padding argument is optional and defaults to a space, and
+// strings that are already wider are returned unchanged.
+var padStart jet.Func = func(args jet.Arguments) reflect.Value {
+	return pad("padStart", args, true)
+}
+
+// padEnd pads the string on the right with the padding string until it
+// reaches the given width counted in runes: padEnd("ab", 5) renders "ab   ".
+// It shares the padding and optional argument behavior with padStart.
+var padEnd jet.Func = func(args jet.Arguments) reflect.Value {
+	return pad("padEnd", args, false)
+}
+
+// pad implements the common behavior of the padStart and padEnd helpers.
+func pad(name string, args jet.Arguments, onLeft bool) reflect.Value {
+	args.RequireNumOfArguments(name, 2, 3)
+
+	in := unwrap(args.Get(0))
+	if !in.IsValid() || in.Kind() != reflect.String && !isNumberKind(in.Kind()) {
+		args.Panicf("%s(): the first argument must be a string or a number", name)
+	}
+	value := elementToString(args.Get(0))
+
+	width := toInt(args, 1)
+	if width < 0 {
+		args.Panicf("%s(): the width must not be negative", name)
+	}
+
+	padding := " "
+	if args.NumOfArguments() == 3 {
+		preset, ok := stringArg(args, 2, name)
+		if !ok {
+			args.Panicf("%s(): the third argument must be a string", name)
+		}
+		padding = preset
+	}
+
+	runes := []rune(value)
+	if len(runes) >= width {
+		return reflect.ValueOf(value)
+	}
+
+	if padding == "" {
+		args.Panicf("%s(): the padding must not be empty", name)
+	}
+
+	filler := []rune(padding)
+	filled := make([]rune, 0, width-len(runes))
+	for len(filled) < width-len(runes) {
+		filled = append(filled, filler...)
+	}
+	filled = filled[:width-len(runes)]
+
+	if onLeft {
+		return reflect.ValueOf(string(filled) + value)
+	}
+
+	return reflect.ValueOf(value + string(filled))
 }
 
 // joinLower splits the input into words, lower cases them and joins them with
